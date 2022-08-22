@@ -18,7 +18,7 @@ class Bullet(Sprite):
 	def update(self):
 		#Отвечает за перемещение снаряда
 		self.y -= self.settings.bullet_speed
-		self.rect.y = self.y 
+		self.rect.y = self.y
 
 	def draw_bullet(self):
 		#Вывод снарядов на экран
