@@ -16,5 +16,18 @@ class Spider(Sprite):
 		#Пауки появляются в влевом верхнем углу экрана.
 		self.rect.x = self.rect.width
 		self.rect.y = self.rect.height
-
+		#Перевод координаты паука из целочисленого в вещественное
+		self.rect.x = float(self.rect.x)
+		self. rect.y = float(self.rect.y)
 	
+	def check_edges(self):
+		#Возвращает True, если паук находится у края экрана
+		screen_rect = self.screen.get_rect()
+		if self.rect.right >= screen_rect.right or self.rect.left <= 0:
+			return True
+
+	def update(self):
+		#Перемещает пауков вправо и влево
+		self.x += (self.settings.spider_speed * self.settings.fleet_direction)
+		self.rect.x = self.x
+

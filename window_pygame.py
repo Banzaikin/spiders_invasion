@@ -3,8 +3,10 @@ import pygame
 
 from settings import Settings
 from ship import Ship
+from stars import Star
 from bullet import Bullet
 from spider import Spider
+
 
 class WindowPygame:
 	#Класс для управлением ресурсами и поведением игры
@@ -16,9 +18,11 @@ class WindowPygame:
 		self.screen = pygame.display.set_mode(
 			(self.settings.screen_width, self.settings.screen_height))
 		self.ship = Ship(self)
+		self.stars = pygame.sprite.Group()
 		self.bullets = pygame.sprite.Group()
 		self.spiders = pygame.sprite.Group()
 
+		self._create_star()
 		self._create_fleat()
 		pygame.display.set_caption("Планета пауков")
 
@@ -28,8 +32,17 @@ class WindowPygame:
 			self._check_events()
 			self.ship.update()
 			self._update_bullets()
+			self._update_spiders()
 			self._update_screen()
 
+	def _create_star(self):
+		#Создание звезд
+		for star_number in range(0,100):
+			if 1 == 1:
+				star = Star(self)
+				self.stars.add(star)
+		
+		
 	def _check_events(self):
 		#Отслеживание движений мыши и клавиатуры
 		for event in pygame.event.get():
@@ -76,10 +89,29 @@ class WindowPygame:
 	def _update_bullets(self):
 		#Обновляет позиции снарядов и уничтожает старые снаряды
 		self.bullets.update()
-
 		for bullet in self.bullets.copy():
 				if bullet.rect.bottom <= 0:
 					self.bullets.remove(bullet)
+
+		self._check_bullet_spider_collisions()
+
+	def _check_bullet_spider_collisions(self):
+		#При обнаружении попадания в пришельца удаляет снаряд и пришельца
+		collisions = pygame.sprite.groupcollide(
+				self.bullets, self.spiders, True, True)
+		if not self.spiders:
+			#Уничтожение существующих снарядов и создание нового отряда пауков
+			self.bullets.empty()
+			self._create_fleat()
+
+	def _update_spiders(self):
+		#Обновляет позиции пауков
+		self._check_fleet_edges()
+		self.spiders.update()
+
+		#Проверка коллизий пауков с кораблем
+		if pygame.sprite.spritecollideany(self.ship, self.spiders):
+			print("Корабль сбит!!!")
 
 	def _create_fleat(self):
 		#Создание группы пауков
@@ -110,10 +142,24 @@ class WindowPygame:
 		spider.rect.y = spider.rect.height + 2 * spider.rect.height * row_number
 		self.spiders.add(spider)
 
+	def _check_fleet_edges(self):
+		#Реагирует на достижение пауком экрана
+		for spider in self.spiders.sprites():
+			if spider.check_edges():
+				self._change_fleet_direction()
+				break
+
+	def _change_fleet_direction(self):
+		#Опускает весь флот и изменяет направление движения
+		for spider in self.spiders.sprites():
+			spider.rect.y += self.settings.fleet_drop_speed
+		self.settings.fleet_direction *= -1
+
 	def _update_screen(self):
 		#При каждом проходе цикла перерисовывается экран
 			self.screen.fill(self.settings.rgb_color)
 			self.ship.blitme()
+			self.stars.draw(self.screen)
 			for bullet in self.bullets.sprites():
 				bullet.draw_bullet()
 			self.spiders.draw(self.screen)
