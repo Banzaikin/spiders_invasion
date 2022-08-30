@@ -1,7 +1,10 @@
 import sys
+from time import sleep
 import pygame
 
 from settings import Settings
+from game_status import GameStats
+from button import Button
 from ship import Ship
 from stars import Star
 from bullet import Bullet
@@ -17,22 +20,33 @@ class WindowPygame:
 		self.settings = Settings()
 		self.screen = pygame.display.set_mode(
 			(self.settings.screen_width, self.settings.screen_height))
+		pygame.display.set_caption("Планета пауков")
+		#Создание экземпляра для хранения игровой статистики
+		self.stats = GameStats(self)
 		self.ship = Ship(self)
 		self.stars = pygame.sprite.Group()
 		self.bullets = pygame.sprite.Group()
 		self.spiders = pygame.sprite.Group()
 
-		self._create_star()
-		self._create_fleat()
-		pygame.display.set_caption("Планета пауков")
+		#Игра запускается в активном состоянии
+		self.stats.game_active = False
 
+		self._create_star()
+		self._create_fleet()
+
+		#Создание кнопки Play
+		self.play_button = Button(self, "Play")
+		
 	def run_game(self):
 		#Функция для запуска основного цикла игры
 		while True:
 			self._check_events()
-			self.ship.update()
-			self._update_bullets()
-			self._update_spiders()
+			
+			if self.stats.game_active:
+				self.ship.update()
+				self._update_bullets()
+				self._update_spiders()
+
 			self._update_screen()
 
 	def _create_star(self):
@@ -52,6 +66,27 @@ class WindowPygame:
 				self._check_keydown_events(event)
 			elif event.type == pygame.KEYUP:
 				self._check_keyup_events(event)
+			elif event.type == pygame.MOUSEBUTTONDOWN:
+				mouse_pos = pygame.mouse.get_pos()
+				self._check_play_button(mouse_pos)
+
+	def _check_play_button(self, mouse_pos):
+		#Запускает игру при нажатии на кнопку Play
+		button_clicked = self.play_button.rect.collidepoint(mouse_pos)
+		if button_clicked and not self.stats.game_active:
+			#Сброс игровых настроек
+			self.settings.initialize_dynamic_settings()
+			#Сброс игровой статистики в данном раунде
+			self.stats.reset_stats()
+			self.stats.game_active = True
+			#Очистка спсиков пауков и снарядов
+			self.spiders.empty()
+			self.bullets.empty()
+			#Создание нового корабля и противников
+			self._create_fleet()
+			self.ship.center_ship()
+			#Указатель мыши скрывается
+			pygame.mouse.set_visible(False)
 					
 	def _check_keydown_events(self, event):
 		#Реагирует на нажатие клавиш
@@ -102,7 +137,8 @@ class WindowPygame:
 		if not self.spiders:
 			#Уничтожение существующих снарядов и создание нового отряда пауков
 			self.bullets.empty()
-			self._create_fleat()
+			self._create_fleet()
+			self.settings.increase_speed()
 
 	def _update_spiders(self):
 		#Обновляет позиции пауков
@@ -111,9 +147,12 @@ class WindowPygame:
 
 		#Проверка коллизий пауков с кораблем
 		if pygame.sprite.spritecollideany(self.ship, self.spiders):
-			print("Корабль сбит!!!")
+			self._ship_hit()
 
-	def _create_fleat(self):
+		#Проверяет добрались ли пауки до нижнего края экрана
+		self._check_spiders_bottom()
+
+	def _create_fleet(self):
 		#Создание группы пауков
 		#Определение ряда для размещения пауков
 		spider = Spider(self)
@@ -155,6 +194,31 @@ class WindowPygame:
 			spider.rect.y += self.settings.fleet_drop_speed
 		self.settings.fleet_direction *= -1
 
+	def _ship_hit(self):
+		#Обрабатывает столкновения корабля с пауками
+		if self.stats.ships_left > 0:
+			self.stats.ships_left -= 1
+			#Очистка списков пауков и снарядов
+			self.spiders.empty()
+			self.bullets.empty()
+			#Создание новой группы пауков и размещение корабля в центре
+			self._create_fleet()
+			self.ship.center_ship()
+			#Пауза
+			sleep(0.5)
+		else:
+			self.stats.game_active = False
+			pygame.mouse.set_visible(True)
+
+	def _check_spiders_bottom(self):
+		#Проверяет добрались ли пауки до нижнего края экрана
+		screen_rect = self.screen.get_rect()
+		for spider in self.spiders.sprites():
+			if spider.rect.bottom >= screen_rect.bottom:
+				#Теряется жизнь
+				self._ship_hit()
+				break
+
 	def _update_screen(self):
 		#При каждом проходе цикла перерисовывается экран
 			self.screen.fill(self.settings.rgb_color)
@@ -163,6 +227,9 @@ class WindowPygame:
 			for bullet in self.bullets.sprites():
 				bullet.draw_bullet()
 			self.spiders.draw(self.screen)
+			#Кнопка Play отображается только в том случае, если игра неактивна
+			if not self.stats.game_active:
+				self.play_button.draw_button()
 			#Отображение последнего прорисованного экрана
 			pygame.display.flip()
 
