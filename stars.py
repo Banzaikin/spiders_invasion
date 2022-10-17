@@ -4,6 +4,7 @@ from random import randint
 
 class Star(Sprite):
 	#Создает звезды на фоне
+	
 	def __init__(self, ai_game):
 		#Инициализирует звёзды и создаёт их начальную позицию
 		super().__init__()

@@ -1,14 +1,18 @@
+import pygame
 import sys
 from time import sleep
-import pygame
+import os
+
 
 from settings import Settings
 from game_status import GameStats
+from scoreboard import Scoreboard
 from button import Button
-from ship import Ship
 from stars import Star
+from ship import Ship
 from bullet import Bullet
 from spider import Spider
+from music import Music
 
 
 class WindowPygame:
@@ -21,14 +25,18 @@ class WindowPygame:
 		self.screen = pygame.display.set_mode(
 			(self.settings.screen_width, self.settings.screen_height))
 		pygame.display.set_caption("Планета пауков")
+		#Функция вызова музыки
+		self.music = Music()
 		#Создание экземпляра для хранения игровой статистики
 		self.stats = GameStats(self)
-		self.ship = Ship(self)
+		self.scoreboard = Scoreboard(self)
 		self.stars = pygame.sprite.Group()
+		self.ship = Ship(self)
 		self.bullets = pygame.sprite.Group()
 		self.spiders = pygame.sprite.Group()
+		
 
-		#Игра запускается в активном состоянии
+		#Игра запускается в выключенном состоянии
 		self.stats.game_active = False
 
 		self._create_star()
@@ -36,18 +44,33 @@ class WindowPygame:
 
 		#Создание кнопки Play
 		self.play_button = Button(self, "Play")
+
+	def frames_per_second(self):
+		#Запукает игру с определенным числом кадр в секунду
+		FPS = 60
+		clock = pygame.time.Clock()
+
+		while True:
+			for event in pygame.event.get():
+				if event.type == pygame.QUIT:
+					exit()
+
+			clock.tick(FPS)
 		
 	def run_game(self):
 		#Функция для запуска основного цикла игры
-		while True:
+		self.run = True
+		self.pause = False
+		while self.run:
 			self._check_events()
 			
-			if self.stats.game_active:
-				self.ship.update()
-				self._update_bullets()
-				self._update_spiders()
+			if not self.pause:
+				if self.stats.game_active:
+					self.ship.update()
+					self._update_bullets()
+					self._update_spiders()
 
-			self._update_screen()
+				self._update_screen()
 
 	def _create_star(self):
 		#Создание звезд
@@ -55,7 +78,6 @@ class WindowPygame:
 			if 1 == 1:
 				star = Star(self)
 				self.stars.add(star)
-		
 		
 	def _check_events(self):
 		#Отслеживание движений мыши и клавиатуры
@@ -66,7 +88,7 @@ class WindowPygame:
 				self._check_keydown_events(event)
 			elif event.type == pygame.KEYUP:
 				self._check_keyup_events(event)
-			elif event.type == pygame.MOUSEBUTTONDOWN:
+			elif not self.pause and event.type == pygame.MOUSEBUTTONDOWN:
 				mouse_pos = pygame.mouse.get_pos()
 				self._check_play_button(mouse_pos)
 
@@ -79,6 +101,9 @@ class WindowPygame:
 			#Сброс игровой статистики в данном раунде
 			self.stats.reset_stats()
 			self.stats.game_active = True
+			self.scoreboard.prep_score()
+			self. scoreboard.prep_level()
+			self.scoreboard.prep_ships()
 			#Очистка спсиков пауков и снарядов
 			self.spiders.empty()
 			self.bullets.empty()
@@ -98,6 +123,11 @@ class WindowPygame:
 			self.ship.moving_up = True
 		elif event.key == pygame.K_DOWN:
 			self.ship.moving_down = True
+		#Пауза
+		elif event.key == pygame.K_g:
+			self.pause = not self.pause
+		elif event.key == pygame.K_g:
+			self.pause = False
 		#Закрытие игры с помощью кнопки Esc
 		elif event.key == pygame.K_ESCAPE:
 			sys.exit()
@@ -134,11 +164,19 @@ class WindowPygame:
 		#При обнаружении попадания в пришельца удаляет снаряд и пришельца
 		collisions = pygame.sprite.groupcollide(
 				self.bullets, self.spiders, True, True)
+		if collisions:
+			for spiders in collisions.values():
+				self.stats.score += self.settings.spider_points * len(spiders)
+			self.scoreboard.prep_score()
+			self.scoreboard.check_high_score()
 		if not self.spiders:
 			#Уничтожение существующих снарядов и создание нового отряда пауков
 			self.bullets.empty()
 			self._create_fleet()
 			self.settings.increase_speed()
+			#Увеличение уровня
+			self.stats.level += 1
+			self.scoreboard.prep_level()
 
 	def _update_spiders(self):
 		#Обновляет позиции пауков
@@ -196,8 +234,10 @@ class WindowPygame:
 
 	def _ship_hit(self):
 		#Обрабатывает столкновения корабля с пауками
-		if self.stats.ships_left > 0:
-			self.stats.ships_left -= 1
+		if self.stats.ships > 0:
+			#Уменьшение жизней и обновление панели счета
+			self.stats.ships -= 1
+			self.scoreboard.prep_ships()
 			#Очистка списков пауков и снарядов
 			self.spiders.empty()
 			self.bullets.empty()
@@ -222,11 +262,14 @@ class WindowPygame:
 	def _update_screen(self):
 		#При каждом проходе цикла перерисовывается экран
 			self.screen.fill(self.settings.rgb_color)
-			self.ship.blitme()
 			self.stars.draw(self.screen)
+			self.ship.blitme()
+			
 			for bullet in self.bullets.sprites():
 				bullet.draw_bullet()
 			self.spiders.draw(self.screen)
+			#Выводит информацию о счёте
+			self.scoreboard.show_score()
 			#Кнопка Play отображается только в том случае, если игра неактивна
 			if not self.stats.game_active:
 				self.play_button.draw_button()

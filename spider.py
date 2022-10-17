@@ -28,6 +28,7 @@ class Spider(Sprite):
 
 	def update(self):
 		#Перемещает пауков вправо и влево
-		self.x += (self.settings.spider_speed * self.settings.fleet_direction)
+		self.x += (self.settings.spider_speed_factor * 
+												self.settings.fleet_direction)
 		self.rect.x = self.x
 
