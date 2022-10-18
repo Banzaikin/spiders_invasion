@@ -14,7 +14,6 @@ from bullet import Bullet
 from spider import Spider
 from music import Music
 
-
 class WindowPygame:
 	#Класс для управлением ресурсами и поведением игры
 

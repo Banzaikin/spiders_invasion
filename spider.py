@@ -1,5 +1,16 @@
+import sys
+import os
 import pygame
 from pygame.sprite import Sprite
+
+def resource_path(relative_path):
+	#Функция загрузки файлов в файл .exe
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 class Spider(Sprite):
 	#Класс для управления пауками
@@ -11,7 +22,7 @@ class Spider(Sprite):
 		self.screen_rect = ai_game.screen.get_rect()
 
 		#Загружает изображение пауков и получает прямоугольник
-		self.image = pygame.image.load('images/mite-alt.png')
+		self.image = pygame.image.load(resource_path('images/mite-alt.png'))
 		self.rect = self.image.get_rect()
 		#Пауки появляются в влевом верхнем углу экрана.
 		self.rect.x = self.rect.width

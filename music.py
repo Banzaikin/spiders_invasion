@@ -1,6 +1,16 @@
 import pygame
 import time
 import os
+import sys
+
+def resource_path(relative_path):
+	#Функция загрузки файлов в файл .exe
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 class Music():
 	#Класс для управления музыкой
@@ -27,8 +37,8 @@ class Music():
 		#Воспроизведение плейлиста
 		self.trek = self.playlist.pop()
 		self.playlist.append(self.trek)
-		pygame.mixer.music.load (self.trek)  
-		pygame.mixer.music.queue (self.playlist.pop()) 
+		pygame.mixer.music.load (resource_path(self.trek))  
+		pygame.mixer.music.queue (resource_path(self.playlist.pop())) 
 		pygame.mixer.music.set_endevent (pygame.USEREVENT)    
 		pygame.mixer.music.play()   
 
