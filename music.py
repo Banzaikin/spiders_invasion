@@ -35,9 +35,7 @@ class Music():
 
 	def playing_music(self):
 		#Воспроизведение плейлиста
-		self.trek = self.playlist.pop()
-		self.playlist.append(self.trek)
-		pygame.mixer.music.load (resource_path(self.trek))  
+		pygame.mixer.music.load (resource_path(self.playlist.pop()))  
 		pygame.mixer.music.queue (resource_path(self.playlist.pop())) 
 		pygame.mixer.music.set_endevent (pygame.USEREVENT)    
 		pygame.mixer.music.play()   
