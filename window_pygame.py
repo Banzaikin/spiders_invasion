@@ -37,7 +37,6 @@ class WindowPygame:
 
 		self._create_star()
 		self._create_fleet()
-		self._music()
 		
 		#Создание кнопки Play
 		self.play_button = Button(self, "Play")
@@ -53,11 +52,6 @@ class WindowPygame:
 					exit()
 
 			clock.tick(FPS)
-			
-	def _music(self):
-		#Запускает музыку
-		pygame.mixer.music.load("sounds/sounds_etniceskaa_slavanskaa_muzyka.mp3")
-		pygame.mixer.music.play(-1)
 		
 	def run_game(self):
 		#Функция для запуска основного цикла игры
