@@ -12,7 +12,6 @@ from stars import Star
 from ship import Ship
 from bullet import Bullet
 from spider import Spider
-from music import Music
 
 class WindowPygame:
 	#Класс для управлением ресурсами и поведением игры
@@ -24,8 +23,6 @@ class WindowPygame:
 		self.screen = pygame.display.set_mode(
 			(self.settings.screen_width, self.settings.screen_height))
 		pygame.display.set_caption("Планета пауков")
-		#Функция вызова музыки
-		self.music = Music()
 		#Создание экземпляра для хранения игровой статистики
 		self.stats = GameStats(self)
 		self.scoreboard = Scoreboard(self)
@@ -40,7 +37,8 @@ class WindowPygame:
 
 		self._create_star()
 		self._create_fleet()
-
+		self._music()
+		
 		#Создание кнопки Play
 		self.play_button = Button(self, "Play")
 
@@ -55,6 +53,11 @@ class WindowPygame:
 					exit()
 
 			clock.tick(FPS)
+			
+	def _music(self):
+		#Запускает музыку
+		pygame.mixer.music.load("sounds/sounds_etniceskaa_slavanskaa_muzyka.mp3")
+		pygame.mixer.music.play(-1)
 		
 	def run_game(self):
 		#Функция для запуска основного цикла игры
